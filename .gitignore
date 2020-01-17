@@ -1,5 +1,5 @@
 node_modules
 experiments/transpiler/engine/compiler.js
 experiments/ioc/build
-experiments/ioc/src/hello_service.js
+experiments/ioc/src/*.js
 experiments/ioc/engine/engine.js
