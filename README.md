@@ -15,3 +15,4 @@ Framework for TypeSafe interdependent microservices
 - Encryption in transport
 - Typesafe data interchange
 - Setup instantiation of service
+- Handle async response production
