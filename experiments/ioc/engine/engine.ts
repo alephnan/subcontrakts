@@ -79,13 +79,16 @@ function compile(
     Object.keys(universe).forEach(serviceName => {
       const serviceDefinition = universe[serviceName];
 
-      print(`// Express.js application for service '${serviceName}'`);
-      print("import * as express from 'express';");
+      print(
+        serviceName,
+        `// Express.js application for service '${serviceName}'`
+      );
+      print(serviceName, "import * as express from 'express';");
 
       const filePath = serviceDefinition.sourceFile.fileName;
       // This ia fault assumption. Does not handle filename with multiple '.'.
       const importPath = filePath.split(".")[0];
-      print(`import {${serviceName}} from '../${importPath}';`);
+      print(serviceName, `import {${serviceName}} from '../../${importPath}';`);
 
       // Import modules of dependencies.
       serviceDefinition.dependencies.forEach(dependency => {
@@ -96,36 +99,41 @@ function compile(
         const absoluteFilePath = mod.resolvedFileName;
         // TODO: unsafe, assumes single '.'.
         const importPath = absoluteFilePath.split(".")[0];
-        print(`import {${dependency}} from '${importPath}'`);
+        print(serviceName, `import {${dependency}} from '${importPath}'`);
       });
 
-      print("const app = express();");
-      print("app.use(express.json());");
-      print("const port = 3000;");
+      print(serviceName, "const app = express();");
+      print(serviceName, "app.use(express.json());");
+      print(serviceName, "const port = 3000;");
 
       // Instantiate service dependencies.
       let constructorParams = [];
       serviceDefinition.dependencies.forEach(dependency => {
         // TODO: Instantiate depdendencie's dependencies.
-        print(`const _${dependency} =  new ${dependency}();`);
+        print(serviceName, `const _${dependency} =  new ${dependency}();`);
         constructorParams.push("_" + dependency);
       });
 
       // Instantiate service, with dependencies.
       print(
+        serviceName,
         `const service = new ${serviceName}(${constructorParams.join(",")});`
       );
 
       Object.keys(serviceDefinition.methods).forEach(methodName => {
-        print(`app.post('/${methodName}', (req, res) => {`);
+        print(serviceName, `app.post('/${methodName}', (req, res) => {`);
         if (generatorOptions.debug) {
-          print(`  console.log(req);`);
+          print(serviceName, `  console.log(req);`);
         }
-        print(`  const response = service.${methodName}(req.body);`);
-        print(`  res.send(response);`);
-        print("});");
+        print(
+          serviceName,
+          `  const response = service.${methodName}(req.body);`
+        );
+        print(serviceName, `  res.send(response);`);
+        print(serviceName, "});");
       });
       print(
+        serviceName,
         "app.listen(port, () => console.log(`Example app listening on port ${port}!`));"
       );
     });
@@ -176,12 +184,22 @@ function compile(
   }
 
   let stream;
-  function print(s) {
+  function print(serviceName, line) {
+    const directory = `./build/${serviceName}`;
+    const filePath = directory + "/app.ts";
     if (!stream) {
-      stream = fs.createWriteStream("build/app.ts");
-      console.log("Writing to file app.ts");
-    }
-    stream.write(s + "\n");
+      if (!fs.existsSync(directory)) {
+        fs.mkdir(directory, { recursive: true }, err => {});
+      }
+      stream = fs.createWriteStream(filePath, {
+        flags: "w+"
+      });
+      stream.on("error", function(err) {
+        console.log("e: ", err);
+      });
+
+      console.log(`Writing to file ${filePath}`);
+    } else stream.write(line + "\n");
   }
 }
 

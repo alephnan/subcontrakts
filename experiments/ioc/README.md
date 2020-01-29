@@ -18,11 +18,11 @@ Take service definitions, write a Express.js program in TypeScript which delegat
 
 4. Compile the application
 
-   `tsc build/app.ts`
+   `tsc build/HelloService/app.ts`
 
 5. Run the application
 
-   `node build/app.js`
+   `node build/HelloService/app.js`
 
 6. Ping the server
 
