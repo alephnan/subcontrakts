@@ -75,16 +75,16 @@ function compile(
   console.log(universe);
 
   Object.keys(universe).forEach(serviceName => {
-    generateService(serviceName);
-  });
-
-  function generateService(serviceName: string) {
-    // Setup File for writing.
     const directory = `./build/${serviceName}`;
-    const serverFilePath = directory + "/app.ts";
     if (!fs.existsSync(directory)) {
       fs.mkdir(directory, { recursive: true }, err => {});
     }
+    generateService(serviceName, directory);
+    generateClientStub(serviceName, directory);
+  });
+
+  function generateService(serviceName: string, directory: string) {
+    const serverFilePath = directory + "/app.ts";
     const stream = fs.createWriteStream(serverFilePath, {
       flags: "w+"
     });
@@ -147,6 +147,34 @@ function compile(
       "app.listen(port, () => console.log(`Example app listening on port ${port}!`));"
     );
 
+    stream.end();
+  }
+
+  function generateClientStub(serviceName: string, directory: string) {
+    const clientFilePath = directory + "/client.ts";
+    const stream = fs.createWriteStream(clientFilePath, {
+      flags: "w+"
+    });
+    stream.on("error", function(err) {
+      console.log("e: ", err);
+    });
+    console.log(`Writing to file ${clientFilePath}`);
+
+    print(stream, `class ${serviceName}Client {`);
+    print(stream, `  constructor() {}`);
+
+    const serviceDefinition = universe[serviceName];
+    Object.keys(serviceDefinition.methods).forEach(methodName => {
+      // TODO: This assumes every service's method has exactly one paramater.
+      const params = "a: any";
+
+      print(stream, `  ${methodName}(${params}) {`);
+      // TODO: Resolve to HTTP call.
+      print(stream, `    throw Error("Unimplemented");`);
+      print(stream, "  }");
+    });
+
+    print(stream, "}");
     stream.end();
   }
 
