@@ -10,6 +10,7 @@ function compile(
   options: ts.CompilerOptions,
   generatorOptions: Options
 ): void {
+  console.log("Compiling file name: " + fileNames[0]);
   let program = ts.createProgram(fileNames, options);
   const sourceFile = program.getSourceFile(fileNames[0]);
 
@@ -122,6 +123,26 @@ function compile(
     // Instantiate service dependencies.
     let constructorParams = [];
     serviceDefinition.dependencies.forEach(dependency => {
+      console.log("Instantiating parent service: " + dependency);
+      console.log(
+        "Relative path of parent service: " + importPaths[dependency]
+      );
+      const fileName = importPaths[dependency].slice(2);
+      const dependencyFilePath = "src/" + fileName + ".ts";
+      console.log("Recursively compiling with filename: ", dependencyFilePath);
+      compile(
+        [dependencyFilePath],
+        {
+          noEmitOnError: true,
+          noImplicitAny: true,
+          target: ts.ScriptTarget.ES5,
+          module: ts.ModuleKind.CommonJS
+        },
+        {
+          debug: true
+        }
+      );
+
       // TODO: Instantiate depdendencie's dependencies.
       print(stream, `const _${dependency} =  new ${dependency}();`);
       constructorParams.push("_" + dependency);
@@ -229,8 +250,9 @@ function compile(
   }
 }
 
+const entryPoint = process.argv.slice(2);
 compile(
-  process.argv.slice(2),
+  entryPoint,
   {
     noEmitOnError: true,
     noImplicitAny: true,
