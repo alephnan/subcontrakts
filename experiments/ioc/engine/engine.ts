@@ -5,17 +5,21 @@ interface Options {
   debug: boolean;
 }
 
+// TODO: This is global variable. It's at risk of mutation.
+const portRegistry = {};
+let initialPort = 3000;
+
 function compile(
   fileNames: string[],
   options: ts.CompilerOptions,
   generatorOptions: Options
 ): void {
+  const universe = {};
+
   console.log("Compiling file name: " + fileNames[0]);
   let program = ts.createProgram(fileNames, options);
   const sourceFile = program.getSourceFile(fileNames[0]);
 
-  // TODO: This is global variable. It's at risk of mutation.
-  const universe = {};
   // Loop through the root AST nodes of the file.
   ts.forEachChild(sourceFile, node => {
     if (node.kind == ts.SyntaxKind.ClassDeclaration) {
@@ -118,7 +122,14 @@ function compile(
 
     print(stream, "const app = express();");
     print(stream, "app.use(express.json());");
-    print(stream, "const port = 3000;");
+
+    let port = initialPort;
+    while (portRegistry[port]) {
+      port++;
+    }
+    console.log(`Assigning port ${port} to service ${serviceName}`);
+    portRegistry[port] = serviceName;
+    print(stream, `const port = ${port};`);
 
     // Instantiate service dependencies.
     let constructorParams = [];
